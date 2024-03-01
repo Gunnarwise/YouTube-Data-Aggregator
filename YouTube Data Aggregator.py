@@ -1,4 +1,5 @@
 # import nessecary libraries
+import re
 from googleapiclient.discovery import build
 import time
 
@@ -108,6 +109,15 @@ def get_video_details(youtube, video_list):
     return stats_list
 
 
+### function to make a list of the top 5 videos of a certain stat ###
+def get_top_5_videos(top_5_stat, video_list):
+    sorted_by_stat = sorted(video_list, key=lambda x: int(x[top_5_stat]))
+    sorted_by_stat.reverse()
+    top_5_list = sorted_by_stat[0:5]
+    return top_5_list
+
+
+
 
 ### function to display given video stats in a readable way ###
 def display_video_stats(video_stats):
@@ -129,7 +139,7 @@ def display_video_stats(video_stats):
 
 
 
-
+### shows the stats of the whole channel ###
 def display_channel_stats(channel_stats):
     # format the published date
     timestamp = channel_stats[0]["snippet"]["publishedAt"]
@@ -146,29 +156,41 @@ def display_channel_stats(channel_stats):
     print("-" * 50 + "\n\n")
     input("Press Enter to go back to main menu: ")
 
+### displays a formatted top 5 videos table ###
+def display_top_5(top_5_stat, top_5_list):
 
-def display_top_5(top_5_stat):
+    for video in top_5_list:
+        if  "Z" in video["published"]:
+            video["published"] = time.strftime("%m/%d/%Y", time.strptime(video["published"][:19], "%Y-%m-%dT%H:%M:%S"))
+        if len(video["title"]) > 45 and top_5_list.index(video) > 1:
+            video["title"] = video["title"][0:46] + "..."
+
+        elif len(video["title"]) > 70:
+            video["title"] = video["title"][0:46] + "..."
+
+
+
     print("\n" * 10)
     print(f"{'Top 5 ' + top_5_stat + 's' : ^150}\n")
     print("+" + "-" * 150 + "+")
     print(f"|{'#1 ' + top_5_stat + ":" : ^74}|{'#2 ' + top_5_stat + ":" : ^74} |")
     print("|" + " " * 74 + "|" + " " * 75 + "|")
-    print(f"|{'TITLE OF VIDEO' : ^74}|{'TITLE OF VIDEO' : ^74} |")
+    print(f"|{top_5_list[0]["title"] : ^74}|{top_5_list[1]["title"] : ^74} |")
     print("|" + " " * 74 + "|" + " " * 75 + "|")
-    print(f"|{'posted on:' : ^74}|{'posted on:' : ^74} |")
-    print(f"|{'views:' : ^74}|{'views:' : ^74} |")
-    print(f"|{'likes:' : ^74}|{'likes:' : ^74} |")
-    print(f"|{'comments:' : ^74}|{'comments:' : ^74} |")
+    print(f"|{'posted on: ' + top_5_list[0]["published"] : ^74}|{'posted on: ' + top_5_list[1]["published"] : ^74} |")
+    print(f"|{'views: ' + top_5_list[0]["view_count"] : ^74}|{'views: ' + top_5_list[1]["view_count"] : ^74} |")
+    print(f"|{'likes: ' + top_5_list[0]["like_count"] : ^74}|{'likes: ' + top_5_list[1]["like_count"] : ^74} |")
+    print(f"|{'comments :' + top_5_list[0]["comment_count"] : ^74}|{'comments: ' + top_5_list[1]["comment_count"] : ^74} |")
     print("|" + " " * 74 + "|" + " " * 75 + "|")
     print("+" + "-" * 150 + "+")
     print(f"|{'#3 ' + top_5_stat + ":" : ^49}|{'#4 ' + top_5_stat + ":" : ^49}|{'#5 ' + top_5_stat + ":" : ^49} |")
     print("|" + " " * 49 + "|"+ " " * 49 + "|"+ " " * 50 + "|")
-    print(f"|{'TITLE OF VIDEO' : ^49}|{'TITLE OF VIDEO' : ^49}|{'TITLE OF VIDEO' : ^49} |")
+    print(f"|{top_5_list[2]["title"] : ^49}|{top_5_list[3]["title"] : ^49}|{top_5_list[4]["title"] : ^49} |")
     print("|" + " " * 49 + "|"+ " " * 49 + "|"+ " " * 50 + "|")
-    print(f"|{'posted on:' : ^49}|{'posted on:' : ^49}|{'posted on:' : ^49} |")
-    print(f"|{'views:' : ^49}|{'views:' : ^49}|{'views:' : ^49} |")
-    print(f"|{'likes:' : ^49}|{'likes:' : ^49}|{'likes:' : ^49} |")
-    print(f"|{'comments:' : ^49}|{'comments:' : ^49}|{'comments:' : ^49} |")
+    print(f"|{'posted on: ' + top_5_list[2]["published"] : ^49}|{'posted on: ' + top_5_list[3]["published"] : ^49}|{'posted on: ' + top_5_list[4]["published"] : ^49} |")
+    print(f"|{'views: ' + top_5_list[2]["view_count"] : ^49}|{'views: ' + top_5_list[3]["view_count"] : ^49}|{'views: ' + top_5_list[4]["view_count"] : ^49} |")
+    print(f"|{'likes:  ' + top_5_list[2]["like_count"] : ^49}|{'likes: ' + top_5_list[3]["like_count"] : ^49}|{'likes: ' + top_5_list[4]["like_count"] : ^49} |")
+    print(f"|{'comments:' + top_5_list[2]["comment_count"] : ^49}|{'comments: ' + top_5_list[3]["comment_count"] : ^49}|{'comments: ' + top_5_list[4]["comment_count"] : ^49} |")
     print("|" + " " * 49 + "|"+ " " * 49 + "|"+ " " * 50 + "|")
     print("+" + "-" * 150 + "+")
     input("Press Enter to go back to main menu: ")
@@ -177,21 +199,21 @@ def display_top_5(top_5_stat):
 
 
 
-# displays options for data visualization
+### displays options for data visualization ###
 def display_menu_and_get_choice():
     print("\n" * 10 + "-" * 50)
     print(f"\n{'Menu Options:' : ^30}\n")
     print(f"{'1: channel stats' : <30}")
     print(f"{'2: stats for most recent video' : <30}")
-    print(f"{'3: top 5 liked videos  (not fully implemented)' : <30}")
-    print(f"{'4: top 5 viewed videos  (not fully implemented)' : <30}")
-    print(f"{'5: top 5 commented videos  (not fully implemented)' : <30}")
+    print(f"{'3: top 5 liked videos' : <30}")
+    print(f"{'4: top 5 viewed videos' : <30}")
+    print(f"{'5: top 5 commented videos' : <30}")
     print(f"{'6: show filter options  (not implemented yet)' : <30}\n")
     print("-" * 50 + "\n")
     choice = input("type the number of your choice, or press Enter to quit: ")
     return choice
 
-# looks at menu choice and runs correct method
+### looks at menu choice and runs correct method ###
 def run_menu_choice(choice, channel_stats, video_stats):
     if choice == "1":
         display_channel_stats(channel_stats)
@@ -200,19 +222,22 @@ def run_menu_choice(choice, channel_stats, video_stats):
         display_video_stats(video_stats[0])
         return False
     elif choice == "3":
-        display_top_5("liked video")
+        top_5_list = get_top_5_videos("like_count", video_stats)
+        display_top_5("liked video", top_5_list)
         return False
     elif choice == "4":
-        display_top_5("viewed video")
+        top_5_list = get_top_5_videos("view_count", video_stats)
+        display_top_5("viewed video", top_5_list)
         return False
     elif choice == "5":
-        display_top_5("commented video")
+        top_5_list = get_top_5_videos("comment_count", video_stats)
+        display_top_5("commented video", top_5_list)
         return False
     elif choice == "6":
         print(6)
         return False
     elif choice == "":
-        print("quit program")
+        print("\nExiting Program...\n")
         return True
     else:
         print("invalid input, please try again")
